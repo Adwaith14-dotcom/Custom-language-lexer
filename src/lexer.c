@@ -12,7 +12,6 @@ void init_lexer(Lexer* lexer, const char* source) {
     lexer->line = 1;
     lexer->column = 1;
 }
-
 static int is_at_end(Lexer* lexer) {
     return lexer->current >= lexer->length;
 }
@@ -43,7 +42,7 @@ static char advance(Lexer* lexer) {
 static void skip_whitespace(Lexer* lexer) {
     for (;;) {
         char c = peek(lexer);
-        switch(c) {
+        switch (c) {
             case ' ':
             case '\r':
             case '\t':
@@ -66,10 +65,10 @@ static int match(Lexer* lexer, char expected) {
 }
 
 static Token* scan_identifier(Lexer* lexer) {
-    size_t start = lexer->current;
-    int start_col = lexer->column;
+    size_t start = lexer->current - 1;
+    int start_col = lexer->column - 1;
 
-    while (isalpha(peek(lexer)) || isdigit(peek(lexer)) || peek(lexer) == '_') {
+    while (isalnum(peek(lexer)) || peek(lexer) == '_') {
         advance(lexer);
     }
 
@@ -79,7 +78,6 @@ static Token* scan_identifier(Lexer* lexer) {
     lexeme[len] = '\0';
 
     TokenType type = TOKEN_IDENTIFIER;
-
     if (strcmp(lexeme, "if") == 0) type = TOKEN_IF;
     else if (strcmp(lexeme, "else") == 0) type = TOKEN_ELSE;
     else if (strcmp(lexeme, "while") == 0) type = TOKEN_WHILE;
@@ -90,13 +88,13 @@ static Token* scan_identifier(Lexer* lexer) {
     else if (strcmp(lexeme, "char") == 0) type = TOKEN_CHAR;
 
     Token* token = create_token(type, lexeme, lexer->line, start_col);
-    free(lexeme); 
+    free(lexeme);
     return token;
 }
 
 static Token* scan_number(Lexer* lexer) {
-    size_t start = lexer->current;
-    int start_col = lexer->column;
+    size_t start = lexer->current - 1;
+    int start_col = lexer->column - 1;
 
     while (isdigit(peek(lexer))) advance(lexer);
 
@@ -109,22 +107,19 @@ static Token* scan_number(Lexer* lexer) {
     char* lexeme = (char*) malloc(len + 1);
     memcpy(lexeme, &lexer->source[start], len);
     lexeme[len] = '\0';
- 
-    TokenType type = strchr(lexeme, '.') ? TOKEN_FLOAT_LITERAL : TOKEN_INT_LITERAL;
 
+    TokenType type = strchr(lexeme, '.') ? TOKEN_FLOAT_LITERAL : TOKEN_INT_LITERAL;
     Token* token = create_token(type, lexeme, lexer->line, start_col);
     free(lexeme);
     return token;
 }
 
 static Token* scan_string(Lexer* lexer) {
-    int start_col = lexer->column;
-    advance(lexer); 
-
-    size_t start = lexer->current;
+    int start_col = lexer->column - 1;
+    size_t start = lexer->current; 
 
     while (peek(lexer) != '"' && !is_at_end(lexer)) {
-        if (peek(lexer) == '\n') lexer->line++; 
+        if (peek(lexer) == '\n') lexer->line++;
         advance(lexer);
     }
 
@@ -150,7 +145,6 @@ Token* get_next_token(Lexer* lexer) {
     if (is_at_end(lexer)) return create_token(TOKEN_EOF, "", lexer->line, lexer->column);
 
     char c = advance(lexer);
-
     int start_col = lexer->column - 1;
 
     switch(c) {
